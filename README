@@ -1,0 +1,13 @@
+# For future me who can't remember how to install and compile openGL stuff :(
+
+sudo apt update
+sudo apt install cmake pkg-config mesa-utils libglu1-mesa-dev freeglut3-dev mesa-common-dev
+sudo apt install libglew-dev libglfw3-dev libglm-dev libao-dev libmpg123-dev
+
+# Get glfw
+cd /usr/local/lib/
+git clone https://github.com/glfw/glfw.git
+cd glfw
+cmake .
+make
+sudo make install
