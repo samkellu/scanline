@@ -1,63 +1,52 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <SDL2/SDL.h>
+#include "scanline.h"
 #include <iostream>
-
-void processInput(GLFWwindow *window);
-// config
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 int main()
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Create context and window
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "scanline", NULL, NULL);
-    if (window == NULL)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
+        std::cout << "Failed to initialise: " << SDL_GetError();
         return -1;
     }
 
-    glfwMakeContextCurrent(window);
+    SDL_Window* window = SDL_CreateWindow("Scanline", 
+                                          SDL_WINDOWPOS_CENTERED,
+                                          SDL_WINDOWPOS_CENTERED,
+                                          SCR_WIDTH,
+                                          SCR_HEIGHT,
+                                          0);
 
-    unsigned int data[SCR_HEIGHT][SCR_WIDTH][3];
-    for( size_t y = 0; y < SCR_HEIGHT; ++y )
+    if (!window)
     {
-        for( size_t x = 0; x < SCR_WIDTH; ++x )
+        std::cout << "Failed to create window: " << SDL_GetError();
+        return -1;
+    }
+
+    SDL_Surface* surface = SDL_GetWindowSurface(window);
+    if (!surface)
+    {
+        std::cout << "Failed to extract surface: " << SDL_GetError();
+        return -1; 
+    }
+
+    bool running = true;
+    while (running)
+    {
+        SDL_Event e;
+        while (SDL_PollEvent(&e) > 0)
         {
-            data[y][x][0] = ( rand() % 256 ) * 256 * 256 * 256;
-            data[y][x][1] = 0;
-            data[y][x][2] = 0;
+            switch (e.type)
+            {
+                case SDL_QUIT:
+                    running = false;
+                    break;
+            }
+            
+            SDL_UpdateWindowSurface(window);
         }
-    }
+    }   
 
-    while (!glfwWindowShouldClose(window))
-    {
-        processInput(window);
-
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDrawPixels(SCR_WIDTH, SCR_HEIGHT, GL_RGB, GL_UNSIGNED_INT, data);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
-    glfwTerminate();
-    return 0;
-}
-
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    return 1;
 }
