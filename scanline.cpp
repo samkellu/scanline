@@ -3,12 +3,14 @@
 #include <iostream>
 
 // Return the next frame to be drawn
-void getFrame(FrameBuffer* fb)
+void getFrame(FrameBuffer* fb, SLRenderer* slr)
 {
     for (int x = 0; x < fb->width; x++)
     {
         for (int y = 0; y < fb->height; y++)
         {
+            // get ray unit vector
+
             fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }
     }
@@ -33,6 +35,34 @@ FrameBuffer* getFrameBuffer(int width, int height)
     }
 
     return fb;
+}
+
+// goto clean on fail
+SLRenderer* getScanlineRenderer(int width, int height)
+{
+    SLRenderer* slr = (SLRenderer*) malloc(sizeof(SLRenderer));
+    if (!slr) return NULL;
+
+    slr->width = width;
+    slr->height = height;
+    slr->rays = (Ray**) malloc(sizeof(Ray*) * width);
+    if (!slr->rays) return NULL;
+
+    for (int i = 0; i < width; i++)
+    {
+        slr->rays[i] = (Ray*) malloc(sizeof(Ray) * height);
+        if (!slr->rays[i]) return NULL;
+    }
+
+    for (int x = 0; x < slr->width; x++)
+    {
+        for (int y = 0; y < slr->height; y++)
+        {
+            slr->rays[x][y].unitVec = {};
+        }
+    }
+
+    return slr;
 }
 
 void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
@@ -85,6 +115,7 @@ int main()
     SDL_Event event;
     SDL_Renderer* renderer;
     FrameBuffer* fb;
+    SLRenderer* slr;
 
     if (!initSDL(&window, &renderer)) return -1;
 
@@ -92,6 +123,13 @@ int main()
     if (!fb)
     {
         printf("Failed to initialise frame buffer!\n");
+        goto clean;
+    }
+
+    slr = getScanlineRenderer(SCR_WIDTH, SCR_HEIGHT);
+    if (!slr)
+    {
+        printf("Failed to initialise renderer!\n");
         goto clean;
     }
 
@@ -105,7 +143,7 @@ int main()
             if (event.type == SDL_QUIT) goto clean;
         }
 
-        getFrame(fb);
+        getFrame(fb, slr);
         drawFrame(renderer, fb);
         SDL_Delay(100);
     }   
@@ -123,6 +161,17 @@ clean:
 
         free(fb->buf);
         free(fb);
+    }
+
+    if (slr && slr->rays)
+    {
+        for (int i = 0; i < slr->width; i++)
+        {
+            free(slr->rays[i]);
+        }
+
+        free(slr->rays);
+        free(slr);
     }
 
     return 0;

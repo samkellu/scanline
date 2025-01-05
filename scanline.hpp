@@ -1,8 +1,11 @@
 #pragma once
 #include <cstdint>
 
-#define SCR_WIDTH 680
-#define SCR_HEIGHT 480
+#define SCR_WIDTH   680
+#define SCR_HEIGHT  480
+#define HFOV        70 * PI / 180
+#define DOV         SCR_WIDTH * tan(HFOV/2) / 2 
+#define VFOV        2 * atan(SCR_HEIGHT * DOV / 2)
 
 struct Color
 {
@@ -40,10 +43,16 @@ struct FrameBuffer
     Color** buf;
 };
 
-class Ray
+struct Ray
 {
-    public:
-        Vec3 source;
-        Vec3 unitVec;
-        Vec3 hitPoint;
+    Vec3 source;
+    Vec3 unitVec;
+    Vec3 hitPoint;
+};
+
+struct SLRenderer
+{
+    int width;
+    int height;
+    Ray** rays;
 };
