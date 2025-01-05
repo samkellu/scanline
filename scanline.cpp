@@ -2,15 +2,14 @@
 #include "scanline.hpp"
 #include <iostream>
 
-// Return the next frame to be drawn
+// Use slr to fill frame buffer
 void getFrame(FrameBuffer* fb, SLRenderer* slr)
 {
     for (int x = 0; x < fb->width; x++)
     {
         for (int y = 0; y < fb->height; y++)
         {
-            // get ray unit vector
-
+            // Project ray for each pixel, return color of first mesh object hit to display, scale alpha by distance ig
             fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }
     }
@@ -48,16 +47,14 @@ SLRenderer* getScanlineRenderer(int width, int height)
     slr->rays = (Ray**) malloc(sizeof(Ray*) * width);
     if (!slr->rays) return NULL;
 
-    for (int i = 0; i < width; i++)
+    for (int x = 0; x < width; x++)
     {
-        slr->rays[i] = (Ray*) malloc(sizeof(Ray) * height);
-        if (!slr->rays[i]) return NULL;
-    }
+        slr->rays[x] = (Ray*) malloc(sizeof(Ray) * height);
+        if (!slr->rays[x]) return NULL;
 
-    for (int x = 0; x < slr->width; x++)
-    {
         for (int y = 0; y < slr->height; y++)
         {
+            // Do some lin alg here
             slr->rays[x][y].unitVec = {};
         }
     }
@@ -67,6 +64,8 @@ SLRenderer* getScanlineRenderer(int width, int height)
 
 void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
 {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
     for (int x = 0; x < fb->width; x++)
     {
         for (int y = 0; y < fb->height; y++)
@@ -117,7 +116,11 @@ int main()
     FrameBuffer* fb;
     SLRenderer* slr;
 
-    if (!initSDL(&window, &renderer)) return -1;
+    if (!initSDL(&window, &renderer)) 
+    {
+        printf("Failed to initialise SDL!\n");
+        goto clean;
+    }
 
     fb = getFrameBuffer(SCR_WIDTH, SCR_HEIGHT);
     if (!fb)
@@ -133,9 +136,7 @@ int main()
         goto clean;
     }
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+
     while (1)
     {
         while (SDL_PollEvent(&event))
