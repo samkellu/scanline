@@ -3,13 +3,13 @@
 #include <iostream>
 
 // Return the next frame to be drawn
-void getFrame(FrameBuffer fb)
+void getFrame(FrameBuffer* fb)
 {
-    for (int x = 0; x < fb.width; x++)
+    for (int x = 0; x < fb->width; x++)
     {
-        for (int y = 0; y < fb.height; y++)
+        for (int y = 0; y < fb->height; y++)
         {
-            fb.buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
+            fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }
     }
 
@@ -35,13 +35,13 @@ FrameBuffer* getFrameBuffer(int width, int height)
     return fb;
 }
 
-void drawFrame(SDL_Renderer* renderer, FrameBuffer fb)
+void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
 {
-    for (int x = 0; x < fb.width; x++)
+    for (int x = 0; x < fb->width; x++)
     {
-        for (int y = 0; y < fb.height; y++)
+        for (int y = 0; y < fb->height; y++)
         {
-            Color px = fb.buf[x][y];
+            Color px = fb->buf[x][y];
             SDL_SetRenderDrawColor(renderer, px.r, px.g, px.b, px.a);
             SDL_RenderDrawPoint(renderer, x, y);
         }
@@ -105,8 +105,8 @@ int main()
             if (event.type == SDL_QUIT) goto clean;
         }
 
-        getFrame(*fb);
-        drawFrame(renderer, *fb);
+        getFrame(fb);
+        drawFrame(renderer, fb);
         SDL_Delay(100);
     }   
 
