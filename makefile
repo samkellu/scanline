@@ -1,22 +1,16 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++11 -g
-GLAD = glad.c
-TARGET = scanline
 SRC = scanline.cpp
-OBJ = $(SRC:.cpp=.o)
-LIBS = -ldl -lglfw
+TARGET = $(SRC:.cpp=)
+SDLFLAGS = -lSDL2
 
-# Compilation rule
-$(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(GLAD) $(LIBS)
+all:build
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLFLAGS) -c $< -o $@
+build:
+	$(CXX) $(SRC) $(SDLFLAGS) -o $(TARGET)
 
-# Clean up object files and executables
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(TARGET)
 
-# Run the executable (optional)
-run: $(TARGET)
+run:
 	./$(TARGET)

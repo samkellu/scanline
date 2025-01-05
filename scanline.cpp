@@ -1,63 +1,117 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <SDL2/SDL.h>
+#include "scanline.hpp"
 #include <iostream>
 
-void processInput(GLFWwindow *window);
-// config
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-int main()
+// Return the next frame to be drawn
+void getFrame(Color** fb, int width, int height)
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    // Create context and window
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "scanline", NULL, NULL);
-    if (window == NULL)
+    for (int x = 0; x < width; x++)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-
-    unsigned int data[SCR_HEIGHT][SCR_WIDTH][3];
-    for( size_t y = 0; y < SCR_HEIGHT; ++y )
-    {
-        for( size_t x = 0; x < SCR_WIDTH; ++x )
+        for (int y = 0; y < height; y++)
         {
-            data[y][x][0] = ( rand() % 256 ) * 256 * 256 * 256;
-            data[y][x][1] = 0;
-            data[y][x][2] = 0;
+            fb[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }
     }
 
-    while (!glfwWindowShouldClose(window))
-    {
-        processInput(window);
-
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDrawPixels(SCR_WIDTH, SCR_HEIGHT, GL_RGB, GL_UNSIGNED_INT, data);
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
-    glfwTerminate();
-    return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window)
+Color** getFrameBuffer(int width, int height)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    Color** fb = (Color**) malloc(sizeof(Color*) * width);
+    if (!fb) return NULL;
+
+    for (int i = 0; i < width; i++)
+    {
+        fb[i] = (Color*) malloc(sizeof(Color) * height);
+        if (!fb[i])
+        {
+            for (int j = i - 1; j >= 0; j--)
+            {
+                free(fb[j]);
+            }
+
+            free(fb);
+            return NULL;
+        }
+    }
+
+    return fb;
+}
+
+bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
+{
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
+    {
+        std::cout << "Failed to initialise: " << SDL_GetError();
+        return false;
+    }
+
+    *window = SDL_CreateWindow("Scanline", 
+                              SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED,
+                              SCR_WIDTH, SCR_HEIGHT, 0);
+
+    if (!*window)
+    {
+        std::cout << "Failed to create window: " << SDL_GetError();
+        return false;
+    }
+
+    *renderer = SDL_CreateRenderer(*window, 0, 0);
+    if (!*renderer)
+    {
+        std::cout << "Failed to create renderer: " << SDL_GetError();
+        return false;
+    }
+
+    return true;
+}
+
+int main()
+{
+    SDL_Window* window;
+    SDL_Event event;
+    SDL_Renderer* renderer;
+
+    if (!initSDL(&window, &renderer)) return -1;
+
+    Color** fb = getFrameBuffer(SCR_WIDTH, SCR_HEIGHT);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+    while (1)
+    {
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT) goto clean;
+        }
+
+        getFrame(fb, SCR_WIDTH, SCR_HEIGHT);
+        for (int x = 0; x < SCR_WIDTH; x++)
+        {
+            for (int y = 0; y < SCR_HEIGHT; y++)
+            {
+                Color px = fb[x][y];
+                SDL_SetRenderDrawColor(renderer, px.r, px.g, px.b, px.a);
+                SDL_RenderDrawPoint(renderer, x, y);
+            }
+        }
+
+        SDL_RenderPresent(renderer);
+        SDL_Delay(100);
+    }   
+
+clean:
+
+    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
+    for (int i = 0; i < SCR_WIDTH; i++)
+    {
+        free(fb[i]);
+    }
+
+    free(fb);
+    return 0;
 }
