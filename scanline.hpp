@@ -10,6 +10,18 @@ struct Vec3 {
     float z;
 };
 
+struct Tri {
+    Vec3 p1;
+    Vec3 p2;
+    Vec3 p3;
+    Color c;
+};
+
+struct Mesh {
+    Tri* tris;
+    int n_tries;
+};
+
 struct Color {
     uint8_t r;
     uint8_t g;

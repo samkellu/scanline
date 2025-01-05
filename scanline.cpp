@@ -103,6 +103,10 @@ int main()
     }   
 
 clean:
+
+    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer);
+    SDL_Quit();
     for (int i = 0; i < SCR_WIDTH; i++)
     {
         free(fb[i]);
