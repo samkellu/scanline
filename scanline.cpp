@@ -3,39 +3,51 @@
 #include <iostream>
 
 // Return the next frame to be drawn
-void getFrame(Color** fb, int width, int height)
+void getFrame(FrameBuffer fb)
 {
-    for (int x = 0; x < width; x++)
+    for (int x = 0; x < fb.width; x++)
     {
-        for (int y = 0; y < height; y++)
+        for (int y = 0; y < fb.height; y++)
         {
-            fb[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
+            fb.buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }
     }
 
 }
 
-Color** getFrameBuffer(int width, int height)
+// goto clean on fail
+FrameBuffer* getFrameBuffer(int width, int height)
 {
-    Color** fb = (Color**) malloc(sizeof(Color*) * width);
+    FrameBuffer* fb = (FrameBuffer*) malloc(sizeof(FrameBuffer));
     if (!fb) return NULL;
+
+    fb->width = width;
+    fb->height = height;
+    fb->buf = (Color**) malloc(sizeof(Color*) * width);
+    if (!fb->buf) return NULL;
 
     for (int i = 0; i < width; i++)
     {
-        fb[i] = (Color*) malloc(sizeof(Color) * height);
-        if (!fb[i])
-        {
-            for (int j = i - 1; j >= 0; j--)
-            {
-                free(fb[j]);
-            }
-
-            free(fb);
-            return NULL;
-        }
+        fb->buf[i] = (Color*) malloc(sizeof(Color) * height);
+        if (!fb->buf[i]) return NULL;
     }
 
     return fb;
+}
+
+void drawFrame(SDL_Renderer* renderer, FrameBuffer fb)
+{
+    for (int x = 0; x < fb.width; x++)
+    {
+        for (int y = 0; y < fb.height; y++)
+        {
+            Color px = fb.buf[x][y];
+            SDL_SetRenderDrawColor(renderer, px.r, px.g, px.b, px.a);
+            SDL_RenderDrawPoint(renderer, x, y);
+        }
+    }
+
+    SDL_RenderPresent(renderer);
 }
 
 bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
@@ -72,10 +84,16 @@ int main()
     SDL_Window* window;
     SDL_Event event;
     SDL_Renderer* renderer;
+    FrameBuffer* fb;
 
     if (!initSDL(&window, &renderer)) return -1;
 
-    Color** fb = getFrameBuffer(SCR_WIDTH, SCR_HEIGHT);
+    fb = getFrameBuffer(SCR_WIDTH, SCR_HEIGHT);
+    if (!fb)
+    {
+        printf("Failed to initialise frame buffer!\n");
+        goto clean;
+    }
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
@@ -87,31 +105,25 @@ int main()
             if (event.type == SDL_QUIT) goto clean;
         }
 
-        getFrame(fb, SCR_WIDTH, SCR_HEIGHT);
-        for (int x = 0; x < SCR_WIDTH; x++)
-        {
-            for (int y = 0; y < SCR_HEIGHT; y++)
-            {
-                Color px = fb[x][y];
-                SDL_SetRenderDrawColor(renderer, px.r, px.g, px.b, px.a);
-                SDL_RenderDrawPoint(renderer, x, y);
-            }
-        }
-
-        SDL_RenderPresent(renderer);
+        getFrame(*fb);
+        drawFrame(renderer, *fb);
         SDL_Delay(100);
     }   
 
 clean:
-
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
-    for (int i = 0; i < SCR_WIDTH; i++)
+    if (fb && fb->buf)
     {
-        free(fb[i]);
+        for (int i = 0; i < fb->width; i++)
+        {
+            free(fb->buf[i]);
+        }
+
+        free(fb->buf);
+        free(fb);
     }
 
-    free(fb);
     return 0;
 }

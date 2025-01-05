@@ -4,29 +4,40 @@
 #define SCR_WIDTH 680
 #define SCR_HEIGHT 480
 
-struct Vec3 {
+struct Color
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+    uint8_t a;
+};
+
+struct Vec3
+{
     float x;
     float y;
     float z;
 };
 
-struct Tri {
+struct Tri
+{
     Vec3 p1;
     Vec3 p2;
     Vec3 p3;
     Color c;
 };
 
-struct Mesh {
+struct Mesh
+{
     Tri* tris;
     int n_tries;
 };
 
-struct Color {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t a;
+struct FrameBuffer
+{
+    int width;
+    int height;
+    Color** buf;
 };
 
 class Ray
