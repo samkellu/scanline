@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <math.h>
 
+#define PI          3.14159
 #define SCR_WIDTH   680
 #define SCR_HEIGHT  480
 #define HFOV        70 * PI / 180
@@ -17,9 +19,13 @@ struct Color
 
 struct Vec3
 {
-    float x;
-    float y;
-    float z;
+    double x;
+    double y;
+    double z;
+    double magnitude()
+    {
+        return sqrt(x*x + y*y + z*z);
+    }
 };
 
 struct Tri

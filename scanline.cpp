@@ -2,18 +2,35 @@
 #include "scanline.hpp"
 #include <iostream>
 
-// Use slr to fill frame buffer
-void getFrame(FrameBuffer* fb, SLRenderer* slr)
+#pragma region Initialise
+
+bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
 {
-    for (int x = 0; x < fb->width; x++)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
     {
-        for (int y = 0; y < fb->height; y++)
-        {
-            // Project ray for each pixel, return color of first mesh object hit to display, scale alpha by distance ig
-            fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
-        }
+        std::cout << "Failed to initialise: " << SDL_GetError();
+        return false;
     }
 
+    *window = SDL_CreateWindow("Scanline", 
+                              SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED,
+                              SCR_WIDTH, SCR_HEIGHT, 0);
+
+    if (!*window)
+    {
+        std::cout << "Failed to create window: " << SDL_GetError();
+        return false;
+    }
+
+    *renderer = SDL_CreateRenderer(*window, 0, 0);
+    if (!*renderer)
+    {
+        std::cout << "Failed to create renderer: " << SDL_GetError();
+        return false;
+    }
+
+    return true;
 }
 
 // goto clean on fail
@@ -47,19 +64,43 @@ SLRenderer* getScanlineRenderer(int width, int height)
     slr->rays = (Ray**) malloc(sizeof(Ray*) * width);
     if (!slr->rays) return NULL;
 
+    double viewportHalfWidth = DOV * tan(HFOV / 2);
+    double viewportHalfHeight = DOV * tan(VFOV / 2);
+
+    // Get all ray unit vectors in screenspace frame of ref
     for (int x = 0; x < width; x++)
     {
         slr->rays[x] = (Ray*) malloc(sizeof(Ray) * height);
         if (!slr->rays[x]) return NULL;
 
+        double vx = (x / width - 0.5) * viewportHalfWidth;
+
         for (int y = 0; y < slr->height; y++)
         {
-            // Do some lin alg here
-            slr->rays[x][y].unitVec = {};
+            double vy = (y / width - 0.5) * viewportHalfWidth;
+            slr->rays[x][y].unitVec = {vx, vy, DOV};
         }
     }
 
     return slr;
+}
+
+#pragma endregion
+
+
+// Use slr to fill frame buffer
+void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading)
+{
+    // Multiply by matrix to convert to worldspace
+    for (int x = 0; x < fb->width; x++)
+    {
+        for (int y = 0; y < fb->height; y++)
+        {
+            // Project ray for each pixel, return color of first mesh object hit to display, scale alpha by distance ig
+            fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
+        }
+    }
+
 }
 
 void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
@@ -77,35 +118,6 @@ void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
     }
 
     SDL_RenderPresent(renderer);
-}
-
-bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
-{
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
-    {
-        std::cout << "Failed to initialise: " << SDL_GetError();
-        return false;
-    }
-
-    *window = SDL_CreateWindow("Scanline", 
-                              SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED,
-                              SCR_WIDTH, SCR_HEIGHT, 0);
-
-    if (!*window)
-    {
-        std::cout << "Failed to create window: " << SDL_GetError();
-        return false;
-    }
-
-    *renderer = SDL_CreateRenderer(*window, 0, 0);
-    if (!*renderer)
-    {
-        std::cout << "Failed to create renderer: " << SDL_GetError();
-        return false;
-    }
-
-    return true;
 }
 
 int main()
@@ -144,7 +156,7 @@ int main()
             if (event.type == SDL_QUIT) goto clean;
         }
 
-        getFrame(fb, slr);
+        getFrame(fb, slr, {1,1,1}, {1,1,1});
         drawFrame(renderer, fb);
         SDL_Delay(100);
     }   
