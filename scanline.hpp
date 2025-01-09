@@ -22,9 +22,42 @@ struct Vec3
     double x;
     double y;
     double z;
+
     double magnitude()
     {
         return sqrt(x*x + y*y + z*z);
+    }
+
+    void normalize()
+    {
+        double mag = magnitude();
+        x /= mag;
+        y /= mag;
+        z /= mag;
+    }
+
+    double dot(Vec3 v)
+    {
+        return v.x * x + v.y * y + v.z * z;
+    }
+
+    void add(Vec3 v)
+    {
+        x += v.x;
+        y += v.y;
+        z += v.z;
+    }
+
+    void subtract(Vec3 v)
+    {
+        x -= v.x;
+        y -= v.y;
+        z -= v.z;
+    }
+
+    void print()
+    {
+        printf("(%lf, %lf, %lf)\n", x, y, z);
     }
 };
 

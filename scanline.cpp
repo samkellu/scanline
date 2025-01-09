@@ -73,12 +73,13 @@ SLRenderer* getScanlineRenderer(int width, int height)
         slr->rays[x] = (Ray*) malloc(sizeof(Ray) * height);
         if (!slr->rays[x]) return NULL;
 
-        double vx = (x / width - 0.5) * viewportHalfWidth;
-
+        double vx = (x / (double) width - 0.5) * viewportHalfWidth;
         for (int y = 0; y < slr->height; y++)
         {
-            double vy = (y / width - 0.5) * viewportHalfWidth;
+            double vy = (y / (double) width - 0.5) * viewportHalfWidth;
             slr->rays[x][y].unitVec = {vx, vy, DOV};
+            slr->rays[x][y].unitVec.normalize();
+            slr->rays[x][y].unitVec.print();
         }
     }
 
@@ -96,6 +97,8 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading)
     {
         for (int y = 0; y < fb->height; y++)
         {
+            Vec3 newVec = heading;
+            newVec.subtract(slr->rays[x][y].unitVec);
             // Project ray for each pixel, return color of first mesh object hit to display, scale alpha by distance ig
             fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }
