@@ -99,6 +99,24 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading)
         {
             Vec3 newVec = heading;
             newVec.subtract(slr->rays[x][y].unitVec);
+
+// https://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
+//             In 3D rotating around the Z-axis would be
+
+//     |cos θ   −sin θ   0| |x|   |x cos θ − y sin θ|   |x'|
+//     |sin θ    cos θ   0| |y| = |x sin θ + y cos θ| = |y'|
+//     |  0       0      1| |z|   |        z        |   |z'|
+// around the Y-axis would be
+
+//     | cos θ    0   sin θ| |x|   | x cos θ + z sin θ|   |x'|
+//     |   0      1       0| |y| = |         y        | = |y'|
+//     |−sin θ    0   cos θ| |z|   |−x sin θ + z cos θ|   |z'|
+// around the X-axis would be
+
+//     |1     0           0| |x|   |        x        |   |x'|
+//     |0   cos θ    −sin θ| |y| = |y cos θ − z sin θ| = |y'|
+//     |0   sin θ     cos θ| |z|   |y sin θ + z cos θ|   |z'|
+
             // Project ray for each pixel, return color of first mesh object hit to display, scale alpha by distance ig
             fb->buf[x][y] = { (uint8_t) (x % 256), (uint8_t) (y % 256), (uint8_t) (x % 256), 200};
         }

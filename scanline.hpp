@@ -95,3 +95,17 @@ struct SLRenderer
     int height;
     Ray** rays;
 };
+
+Tri triangles[] =
+{
+    {50, 0, 100},
+    {50, 50, 100},
+    {0, 0, 100},
+    {255, 255, 255, 255}
+};
+
+Mesh worldMesh = 
+{
+    triangles,
+    1
+};
