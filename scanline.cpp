@@ -98,6 +98,7 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading, Mes
         {
             fb->buf[x][y] = {0, 0, 0, 0};
             Vec3 newVec = heading;
+            Vec3 ray = slr->rays[x][y].unitVec;
 
 // https://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
 //             In 3D rotating around the Z-axis would be
@@ -115,22 +116,21 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading, Mes
 //     |1     0           0| |x|   |        x        |   |x'|
 //     |0   cos θ    −sin θ| |y| = |y cos θ − z sin θ| = |y'|
 //     |0   sin θ     cos θ| |z|   |y sin θ + z cos θ|   |z'|
-            bool hit = false;
             for (int m = 0; m < mesh.n_tris; m++)
             {
                 Tri tr = mesh.tris[m];
                 Vec3 n = tr.normal();
 
                 // Triangle and ray are parallel
-                if (n.dot(heading) == 0) continue;
+                if (n.dot(ray) == 0) continue;
 
                 double d = -n.dot(tr.p0);
-                double t = -(n.dot(position) + d) / n.dot(heading);
+                double t = -(n.dot(position) + d) / n.dot(ray);
                 // Triangle is behind ray origin
                 if (t < 0) continue;
 
                 // Intersection of ray with triangle plane
-                Vec3 p = position + heading * t;
+                Vec3 p = position + ray * t;
                 
                 // Check p is on the correct side of each edge
                 Vec3 pVertex = p - tr.p0;
@@ -145,18 +145,12 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading, Mes
                 nEdge = (tr.p0 - tr.p2).cross(pVertex);
                 if (n.dot(nEdge) < 0) continue;
 
-                bool hit = true;
-
                 fb->buf[x][y] = tr.color;
-            }
-
-            if (hit){
-                printf("hell yeh\n");
                 printf("(%d, %d) %d %d %d\n", x, y, fb->buf[x][y].r, fb->buf[x][y].g, fb->buf[x][y].b);
             }
         }
     }
-
+    printf("frame done\n");
 }
 
 void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
@@ -205,16 +199,23 @@ int main()
     }
 
 
+
     while (1)
     {
-        while (SDL_PollEvent(&event))
+        for (float x = 0; x < 10.0f; x += 0.05f)
         {
-            if (event.type == SDL_QUIT) goto clean;
-        }
+            for (float y = 0; y < 10.0f; y += 0.05f)
+            {
+                while (SDL_PollEvent(&event))
+                {
+                    if (event.type == SDL_QUIT) goto clean;
+                }
 
-        getFrame(fb, slr, {1,1,1}, {1,1,1}, worldMesh);
-        drawFrame(renderer, fb);
-        SDL_Delay(100);
+                getFrame(fb, slr, {0, 0, 0}, {x,y,0}, worldMesh);
+                drawFrame(renderer, fb);
+                SDL_Delay(100);
+            }
+        }
     }   
 
 clean:
