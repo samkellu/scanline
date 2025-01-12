@@ -207,64 +207,52 @@ int main()
             {
                 case SDL_QUIT:
                     goto clean;
-
-               case SDL_KEYDOWN:
-                    double dx = 0, dz = 0;
-                    switch (event.key.keysym.sym)
-                    {
-                        case SDLK_w:
-                            dz += 0.05f;
-                            break;
-
-                        case SDLK_a:
-                            dx -= 0.05f;
-                            break;
-
-                        case SDLK_s:
-                            dz -= 0.05f;
-                            break;
-
-                        case SDLK_d:
-                            dx += 0.05f;
-                            break;
-                    };
-
-                    if (dx != 0)
-                    {
-                        Vec3 headingXNorm = (Vec3) {0, heading.y, 0}.cross({0, 0, heading.z});
-                        headingXNorm.normalize();
-                        if (headingXNorm.x == 0 && headingXNorm.y == 0 && headingXNorm.z == 0)
-                        {
-                            position.x += dx;
-                        }
-                        else
-                        {
-                            position.add(headingXNorm * dx);
-                        }
-                    }
-
-                    if (dz != 0)
-                    {
-                        Vec3 headingZNorm = (Vec3) {heading.x, 0, 0}.cross({0, heading.y, 0});
-                        headingZNorm.normalize();
-                        if (headingZNorm.x == 0 && headingZNorm.y == 0 && headingZNorm.z == 0)
-                        {
-                            position.z += dz;
-                        }
-                        else
-                        {
-                            position.add(headingZNorm * dz);
-                        }
-                    }
-
-                    position.print();
-                    break;
-            };
+            }
         }
+
+        int dx = 0, dz = 0;
+        const uint8_t* currentKeyStates = SDL_GetKeyboardState(NULL);
+        if (currentKeyStates[SDL_SCANCODE_UP]) dz++;
+        if (currentKeyStates[SDL_SCANCODE_DOWN]) dz--;
+        if (currentKeyStates[SDL_SCANCODE_LEFT]) dx--;
+        if (currentKeyStates[SDL_SCANCODE_RIGHT]) dx++;
+
+        Vec3 dd = {0, 0, 0}, headingXNorm = {0, 0, 0}, headingZNorm = {0, 0, 0};
+        if (dx != 0)
+        {
+            headingXNorm = (Vec3) {0, heading.y, 0}.cross({0, 0, heading.z});
+            headingXNorm.normalize();
+            if (headingXNorm.x == 0 && headingXNorm.y == 0 && headingXNorm.z == 0)
+            {
+                headingXNorm.x += dx;
+            }
+            else
+            {
+                headingXNorm = headingXNorm * dx;
+            }
+        }
+
+        if (dz != 0)
+        {
+            headingZNorm = (Vec3) {heading.x, 0, 0}.cross({0, heading.y, 0});
+            headingZNorm.normalize();
+            if (headingZNorm.x == 0 && headingZNorm.y == 0 && headingZNorm.z == 0)
+            {
+                headingZNorm.z += dz;
+            }
+            else
+            {
+                headingZNorm = headingZNorm * dz;
+            }
+        }
+
+        dd = headingZNorm + headingXNorm;
+        dd.normalize();
+        position.add(dd * STEP_SIZE);
 
         getFrame(fb, slr, position, heading, worldMesh);
         drawFrame(renderer, fb);
-        SDL_Delay(100);
+        // SDL_Delay(10);
     }   
 
 clean:

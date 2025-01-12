@@ -8,6 +8,7 @@
 #define HFOV        70 * PI / 180
 #define DOV         SCR_WIDTH * tan(HFOV/2) / 2 
 #define VFOV        2 * atan(SCR_HEIGHT * DOV / 2)
+#define STEP_SIZE   0.05f
 
 struct Color
 {
