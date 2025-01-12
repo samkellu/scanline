@@ -41,6 +41,11 @@ struct Vec3
         return v.x * x + v.y * y + v.z * z;
     }
 
+    Vec3 cross(Vec3 v)
+    {
+        return {y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x};
+    };
+
     void add(Vec3 v)
     {
         x += v.x;
@@ -55,6 +60,21 @@ struct Vec3
         z -= v.z;
     }
 
+    inline Vec3 operator-(Vec3 v)
+    {
+        return {x - v.x, y - v.y, z - v.z};
+    }
+
+    inline Vec3 operator+(Vec3 v)
+    {
+        return {x + v.x, y + v.y, z + v.z};
+    }
+
+    inline Vec3 operator*(double d)
+    {
+        return {x * d, y * d, z * d};
+    }
+
     void print()
     {
         printf("(%lf, %lf, %lf)\n", x, y, z);
@@ -63,16 +83,23 @@ struct Vec3
 
 struct Tri
 {
+    Vec3 p0;
     Vec3 p1;
     Vec3 p2;
-    Vec3 p3;
-    Color c;
+    Color color;
+
+    Vec3 normal()
+    {
+        Vec3 e0 = p1 - p0;
+        Vec3 e1 = p2 - p0;
+        return e0.cross(e1);
+    }
 };
 
 struct Mesh
 {
     Tri* tris;
-    int n_tries;
+    int n_tris;
 };
 
 struct FrameBuffer
