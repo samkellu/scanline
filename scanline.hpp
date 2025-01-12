@@ -31,6 +31,8 @@ struct Vec3
     void normalize()
     {
         double mag = magnitude();
+        if (mag == 0) return;
+
         x /= mag;
         y /= mag;
         z /= mag;

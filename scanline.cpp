@@ -146,11 +146,9 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading, Mes
                 if (n.dot(nEdge) < 0) continue;
 
                 fb->buf[x][y] = tr.color;
-                printf("(%d, %d) %d %d %d\n", x, y, fb->buf[x][y].r, fb->buf[x][y].g, fb->buf[x][y].b);
             }
         }
     }
-    printf("frame done\n");
 }
 
 void drawFrame(SDL_Renderer* renderer, FrameBuffer* fb)
@@ -199,23 +197,74 @@ int main()
     }
 
 
-
+    Vec3 position; position = {0, 0, 0};
+    Vec3 heading; heading = {1, 0, 0};
     while (1)
     {
-        for (float x = 0; x < 10.0f; x += 0.05f)
+        while (SDL_PollEvent(&event))
         {
-            for (float y = 0; y < 10.0f; y += 0.05f)
+            switch (event.type)
             {
-                while (SDL_PollEvent(&event))
-                {
-                    if (event.type == SDL_QUIT) goto clean;
-                }
+                case SDL_QUIT:
+                    goto clean;
 
-                getFrame(fb, slr, {0, 0, 0}, {x,y,0}, worldMesh);
-                drawFrame(renderer, fb);
-                SDL_Delay(100);
-            }
+               case SDL_KEYDOWN:
+                    double dx = 0, dz = 0;
+                    switch (event.key.keysym.sym)
+                    {
+                        case SDLK_w:
+                            dz += 0.05f;
+                            break;
+
+                        case SDLK_a:
+                            dx -= 0.05f;
+                            break;
+
+                        case SDLK_s:
+                            dz -= 0.05f;
+                            break;
+
+                        case SDLK_d:
+                            dx += 0.05f;
+                            break;
+                    };
+
+                    if (dx != 0)
+                    {
+                        Vec3 headingXNorm = (Vec3) {0, heading.y, 0}.cross({0, 0, heading.z});
+                        headingXNorm.normalize();
+                        if (headingXNorm.x == 0 && headingXNorm.y == 0 && headingXNorm.z == 0)
+                        {
+                            position.x += dx;
+                        }
+                        else
+                        {
+                            position.add(headingXNorm * dx);
+                        }
+                    }
+
+                    if (dz != 0)
+                    {
+                        Vec3 headingZNorm = (Vec3) {heading.x, 0, 0}.cross({0, heading.y, 0});
+                        headingZNorm.normalize();
+                        if (headingZNorm.x == 0 && headingZNorm.y == 0 && headingZNorm.z == 0)
+                        {
+                            position.z += dz;
+                        }
+                        else
+                        {
+                            position.add(headingZNorm * dz);
+                        }
+                    }
+
+                    position.print();
+                    break;
+            };
         }
+
+        getFrame(fb, slr, position, heading, worldMesh);
+        drawFrame(renderer, fb);
+        SDL_Delay(100);
     }   
 
 clean:
