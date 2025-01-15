@@ -97,25 +97,9 @@ void getFrame(FrameBuffer* fb, SLRenderer* slr, Vec3 position, Vec3 heading, Mes
         for (int y = 0; y < fb->height; y++)
         {
             fb->buf[x][y] = {0, 0, 0, 0};
-            Vec3 newVec = heading;
-            Vec3 ray = slr->rays[x][y].unitVec;
+            Vec3 ray = slr->rays[x][y].unitVec + heading;
+            ray.normalize();
 
-// https://stackoverflow.com/questions/14607640/rotating-a-vector-in-3d-space
-//             In 3D rotating around the Z-axis would be
-
-//     |cos θ   −sin θ   0| |x|   |x cos θ − y sin θ|   |x'|
-//     |sin θ    cos θ   0| |y| = |x sin θ + y cos θ| = |y'|
-//     |  0       0      1| |z|   |        z        |   |z'|
-// around the Y-axis would be
-
-//     | cos θ    0   sin θ| |x|   | x cos θ + z sin θ|   |x'|
-//     |   0      1       0| |y| = |         y        | = |y'|
-//     |−sin θ    0   cos θ| |z|   |−x sin θ + z cos θ|   |z'|
-// around the X-axis would be
-
-//     |1     0           0| |x|   |        x        |   |x'|
-//     |0   cos θ    −sin θ| |y| = |y cos θ − z sin θ| = |y'|
-//     |0   sin θ     cos θ| |z|   |y sin θ + z cos θ|   |z'|
             for (int m = 0; m < mesh.n_tris; m++)
             {
                 Tri tr = mesh.tris[m];
@@ -199,6 +183,9 @@ int main()
 
     Vec3 position; position = {0, 0, 0};
     Vec3 heading; heading = {1, 0, 0};
+    int mxc; mxc = 0;
+    int myc; myc = 0;
+    const uint8_t* currentKeyStates; currentKeyStates = SDL_GetKeyboardState(NULL);
     while (1)
     {
         while (SDL_PollEvent(&event))
@@ -210,17 +197,36 @@ int main()
             }
         }
 
+        int mx, my;
+        SDL_GetGlobalMouseState(&mx, &my);
+
+        double mxa = PI * (mxc - mx) / (double) SCR_WIDTH;
+        double mya = PI * (myc - my) / (double) SCR_WIDTH;
+        mxc = mx;
+        myc = my;
+
+        double smxa = sin(mxa);
+        double smya = sin(mya);
+        double cmxa = cos(mxa);
+        double cmya = cos(mya);
+
+        heading = (Vec3)
+        {
+            heading.x * cmxa + smxa * (heading.y + heading.z * cmya),
+            heading.y * cmya - heading.z * smya,
+            -heading.x * smxa + smya * cmxa * (heading.y + heading.z)
+        };
+
         int dx = 0, dz = 0;
-        const uint8_t* currentKeyStates = SDL_GetKeyboardState(NULL);
         if (currentKeyStates[SDL_SCANCODE_UP]) dz++;
         if (currentKeyStates[SDL_SCANCODE_DOWN]) dz--;
         if (currentKeyStates[SDL_SCANCODE_LEFT]) dx--;
         if (currentKeyStates[SDL_SCANCODE_RIGHT]) dx++;
 
-        Vec3 dd = {0, 0, 0}, headingXNorm = {0, 0, 0}, headingZNorm = {0, 0, 0};
+        Vec3 dd = {0, 0, 0};
         if (dx != 0)
         {
-            headingXNorm = (Vec3) {0, heading.y, 0}.cross({0, 0, heading.z});
+            Vec3 headingXNorm = (Vec3) {0, heading.y, 0}.cross({0, 0, heading.z});
             headingXNorm.normalize();
             if (headingXNorm.x == 0 && headingXNorm.y == 0 && headingXNorm.z == 0)
             {
@@ -230,11 +236,13 @@ int main()
             {
                 headingXNorm = headingXNorm * dx;
             }
+
+            dd = dd + headingXNorm;
         }
 
         if (dz != 0)
         {
-            headingZNorm = (Vec3) {heading.x, 0, 0}.cross({0, heading.y, 0});
+            Vec3 headingZNorm = (Vec3) {heading.x, 0, 0}.cross({0, heading.y, 0});
             headingZNorm.normalize();
             if (headingZNorm.x == 0 && headingZNorm.y == 0 && headingZNorm.z == 0)
             {
@@ -244,14 +252,15 @@ int main()
             {
                 headingZNorm = headingZNorm * dz;
             }
+
+            dd = dd + headingZNorm;
         }
 
-        dd = headingZNorm + headingXNorm;
         dd.normalize();
         position.add(dd * STEP_SIZE);
-
         getFrame(fb, slr, position, heading, worldMesh);
         drawFrame(renderer, fb);
+        printf("frame\n");
         // SDL_Delay(10);
     }   
 
