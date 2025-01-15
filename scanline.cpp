@@ -22,7 +22,7 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         std::cout << "Failed to create window: " << SDL_GetError();
         return false;
     }
-
+    
     *renderer = SDL_CreateRenderer(*window, 0, 0);
     if (!*renderer)
     {
@@ -30,6 +30,9 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         return false;
     }
 
+    int enabled = SDL_CaptureMouse(SDL_TRUE);
+    printf("%d\n", enabled);
+    printf("%s\n", SDL_GetError());
     return true;
 }
 
@@ -200,8 +203,8 @@ int main()
         int mx, my;
         SDL_GetGlobalMouseState(&mx, &my);
 
-        double mxa = PI * (mxc - mx) / (double) SCR_WIDTH;
-        double mya = PI * (myc - my) / (double) SCR_WIDTH;
+        double mxa = 3* PI * (mxc - mx) / (double) SCR_WIDTH;
+        double mya = -3 * PI * (myc - my) / (double) SCR_WIDTH;
         mxc = mx;
         myc = my;
 
@@ -216,6 +219,8 @@ int main()
             heading.y * cmya - heading.z * smya,
             -heading.x * smxa + smya * cmxa * (heading.y + heading.z)
         };
+
+        heading.print();
 
         int dx = 0, dz = 0;
         if (currentKeyStates[SDL_SCANCODE_UP]) dz++;
@@ -260,7 +265,6 @@ int main()
         position.add(dd * STEP_SIZE);
         getFrame(fb, slr, position, heading, worldMesh);
         drawFrame(renderer, fb);
-        printf("frame\n");
         // SDL_Delay(10);
     }   
 
