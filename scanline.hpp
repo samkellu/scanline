@@ -5,7 +5,7 @@
 #define PI          3.14159
 #define SCR_WIDTH   680
 #define SCR_HEIGHT  480
-#define HFOV        70 * PI / 180
+#define HFOV        90 * PI / 180
 #define DOV         SCR_WIDTH * tan(HFOV/2) / 2 
 #define VFOV        2 * atan(SCR_HEIGHT * DOV / 2)
 #define STEP_SIZE   0.2f

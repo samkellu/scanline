@@ -30,9 +30,6 @@ bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
         return false;
     }
 
-    int enabled = SDL_CaptureMouse(SDL_TRUE);
-    printf("%d\n", enabled);
-    printf("%s\n", SDL_GetError());
     return true;
 }
 
@@ -191,6 +188,10 @@ int main()
     const uint8_t* currentKeyStates; currentKeyStates = SDL_GetKeyboardState(NULL);
     while (1)
     {
+        int enabled = SDL_CaptureMouse(SDL_TRUE);
+        printf("%d\n", enabled);
+        printf("%s\n", SDL_GetError());
+
         while (SDL_PollEvent(&event))
         {
             switch (event.type)
@@ -203,8 +204,8 @@ int main()
         int mx, my;
         SDL_GetGlobalMouseState(&mx, &my);
 
-        double mxa = 3* PI * (mxc - mx) / (double) SCR_WIDTH;
-        double mya = -3 * PI * (myc - my) / (double) SCR_WIDTH;
+        double mxa = PI * (mxc - mx) / (double) SCR_WIDTH;
+        double mya = -PI * (myc - my) / (double) SCR_WIDTH;
         mxc = mx;
         myc = my;
 
@@ -220,47 +221,17 @@ int main()
             -heading.x * smxa + smya * cmxa * (heading.y + heading.z)
         };
 
+        // heading.normalize();
         heading.print();
 
-        int dx = 0, dz = 0;
-        if (currentKeyStates[SDL_SCANCODE_UP]) dz++;
-        if (currentKeyStates[SDL_SCANCODE_DOWN]) dz--;
-        if (currentKeyStates[SDL_SCANCODE_LEFT]) dx--;
-        if (currentKeyStates[SDL_SCANCODE_RIGHT]) dx++;
+        int df = 0, ds = 0;
+        if (currentKeyStates[SDL_SCANCODE_UP]) df++;
+        if (currentKeyStates[SDL_SCANCODE_DOWN]) df--;
+        if (currentKeyStates[SDL_SCANCODE_LEFT]) ds--;
+        if (currentKeyStates[SDL_SCANCODE_RIGHT]) ds++;
 
-        Vec3 dd = {0, 0, 0};
-        if (dx != 0)
-        {
-            Vec3 headingXNorm = (Vec3) {0, heading.y, 0}.cross({0, 0, heading.z});
-            headingXNorm.normalize();
-            if (headingXNorm.x == 0 && headingXNorm.y == 0 && headingXNorm.z == 0)
-            {
-                headingXNorm.x += dx;
-            }
-            else
-            {
-                headingXNorm = headingXNorm * dx;
-            }
-
-            dd = dd + headingXNorm;
-        }
-
-        if (dz != 0)
-        {
-            Vec3 headingZNorm = (Vec3) {heading.x, 0, 0}.cross({0, heading.y, 0});
-            headingZNorm.normalize();
-            if (headingZNorm.x == 0 && headingZNorm.y == 0 && headingZNorm.z == 0)
-            {
-                headingZNorm.z += dz;
-            }
-            else
-            {
-                headingZNorm = headingZNorm * dz;
-            }
-
-            dd = dd + headingZNorm;
-        }
-
+        Vec3 dd = (Vec3) {heading.x, 0, heading.z} * ds;
+        dd = dd + heading.cross((Vec3) {0, 1, 0}) * df;
         dd.normalize();
         position.add(dd * STEP_SIZE);
         getFrame(fb, slr, position, heading, worldMesh);
