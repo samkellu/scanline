@@ -7,6 +7,31 @@ void fbSizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+char* readShaderFromFile(const char* path)
+{
+    FILE* fp = fopen(path, "r");
+    if (fp == NULL) return NULL;
+
+    char* output = (char*) malloc(128);
+    char c;
+    int nChars = 0;
+    int capacity = 128;
+    while ((c = fgetc(fp)) != EOF)
+    {
+        nChars++;
+        if (nChars == capacity)
+        {
+            capacity += 128;
+            output = (char*) realloc(output, sizeof(char) * capacity);
+        }
+
+        output[nChars] = c;
+    }
+
+    fclose(fp);
+    return output;
+}
+
 bool initGLFW(GLFWwindow** window)
 {
     if (glfwInit() == GLFW_FALSE) return false;
@@ -18,7 +43,6 @@ bool initGLFW(GLFWwindow** window)
     if (*window == NULL) 
     {
         printf("Failed to initialise window...\n");
-        fflush(stdout);
         return false;
     }
 
@@ -30,7 +54,47 @@ bool initGLFW(GLFWwindow** window)
         return false;
     }
 
-    // TODO: Load shaders from files...
+    char* fragShader = readShaderFromFile(FRAG_PATH);
+    if (fragShader == NULL)
+    {
+        printf("Failed to read fragment shader...");
+        return false;
+    }
+
+    int success;
+    char infoLog[512];
+    uint64_t fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragShader, NULL);
+    free(fragShader);
+
+    glCompileShader(fragmentShader);
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        printf("Failed to initialise fragment shader: %s\n", infoLog);
+        return false;
+    }
+
+    char* vertShader = readShaderFromFile(VERT_PATH);
+    if (vertShader == NULL)
+    {
+        printf("Failed to read vertex shader...");
+        return false;
+    }
+
+    uint64_t vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertShader, NULL);
+    free(vertShader);
+
+    glCompileShader(vertexShader);
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        printf("Failed to initialise vertex shader: %s\n", infoLog);
+        return false;
+    }
 
     return true;
 }
