@@ -1,34 +1,36 @@
-#include <SDL2/SDL.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include "scanline.hpp"
 #include <iostream>
 
 #pragma region Initialise
 
-bool initSDL(SDL_Window** window, SDL_Renderer** renderer)
+void fbSizeCallback(GLFWwindow* window, int width, int height);
+
+bool initGLFW(GLFWwindow* window)
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
+    if (glfwInit() == GLFW_FALSE) return false;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Scanline", NULL, NULL);
+    if (!window) 
     {
-        std::cout << "Failed to initialise: " << SDL_GetError();
+        printf("Failed to initialise window...\n");
         return false;
     }
 
-    *window = SDL_CreateWindow("Scanline", 
-                              SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED,
-                              SCR_WIDTH, SCR_HEIGHT, 0);
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, fbSizeCallback);
 
-    if (!*window)
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
-        std::cout << "Failed to create window: " << SDL_GetError();
+        printf("Failed to initialise GLAD...\n");
         return false;
     }
-    
-    *renderer = SDL_CreateRenderer(*window, 0, 0);
-    if (!*renderer)
-    {
-        std::cout << "Failed to create renderer: " << SDL_GetError();
-        return false;
-    }
+
+    // TODO: Load shaders from files...
 
     return true;
 }
@@ -160,7 +162,7 @@ int main()
     FrameBuffer* fb;
     SLRenderer* slr;
 
-    if (!initSDL(&window, &renderer)) 
+    if (!initGLFW(&window, &renderer)) 
     {
         printf("Failed to initialise SDL!\n");
         goto clean;

@@ -11,3 +11,5 @@ cd glfw
 cmake .
 make
 sudo make install
+
+# get GLAD from http://glad.dav1d.de/, put glad and KHR in /usr/include/ 
