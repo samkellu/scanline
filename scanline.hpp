@@ -1,6 +1,10 @@
 #pragma once
 #include <cstdint>
 #include <math.h>
+#include <cstdio>
+#define GLFW_INCLUDE_NONE
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #define PI          3.14159
 #define SCR_WIDTH   680
