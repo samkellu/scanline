@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++11 -g
 SRC = scanline.cpp
-INC = glad.c
+INC = glad.c -Iinclude
 TARGET = $(SRC:.cpp=)
 LDFLAGS = -ldl -lglfw
 

@@ -7,23 +7,23 @@ void fbSizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-bool initGLFW(GLFWwindow* window)
+bool initGLFW(GLFWwindow** window)
 {
     if (glfwInit() == GLFW_FALSE) return false;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Scanline", NULL, NULL);
-    if (!window) 
+    *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Scanline", NULL, NULL);
+    if (*window == NULL) 
     {
         printf("Failed to initialise window...\n");
+        fflush(stdout);
         return false;
     }
 
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, fbSizeCallback);
-
+    glfwMakeContextCurrent(*window);
+    glfwSetFramebufferSizeCallback(*window, fbSizeCallback);
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         printf("Failed to initialise GLAD...\n");
@@ -55,7 +55,7 @@ int main()
     int myc = 0;
 
     GLFWwindow* window;
-    if (!initGLFW(window)) 
+    if (!initGLFW(&window)) 
     {
         printf("Failed to initialise GLFW!\n");
         goto clean;
