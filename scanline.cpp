@@ -16,17 +16,17 @@ char* readShaderFromFile(const char* path)
     char c;
     int nChars = 0;
     int capacity = 128;
-    while ((c = fgetc(fp)) != EOF)
+    do
     {
-        nChars++;
-        if (nChars == capacity)
+        c = fgetc(fp);
+        output[nChars] = c == EOF ? '\0' : c;
+        if (++nChars == capacity)
         {
             capacity += 128;
             output = (char*) realloc(output, sizeof(char) * capacity);
         }
-
-        output[nChars] = c;
-    }
+    } 
+    while (c != EOF);
 
     fclose(fp);
     return output;
@@ -72,7 +72,7 @@ bool initGLFW(GLFWwindow** window)
     if (!success)
     {
         glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        printf("Failed to initialise fragment shader: %s\n", infoLog);
+        printf("Failed to compile fragment shader: %s\n", infoLog);
         return false;
     }
 
@@ -92,7 +92,24 @@ bool initGLFW(GLFWwindow** window)
     if (!success)
     {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        printf("Failed to initialise vertex shader: %s\n", infoLog);
+        printf("Failed to compile vertex shader: %s\n", infoLog);
+        return false;
+    }
+
+    uint64_t shader = glCreateProgram();
+    glAttachShader(shader, vertexShader);
+    glAttachShader(shader, fragmentShader);
+    glLinkProgram(shader);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    glGetProgramiv(shader, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shader, 512, NULL, infoLog);
+        printf("Failed link shader program: %s\n", infoLog);
+        glDeleteProgram(shader);
         return false;
     }
 
