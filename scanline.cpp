@@ -7,113 +7,50 @@ void fbSizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-char* readShaderFromFile(const char* path)
+uint32_t createShader(const char* path, const uint32_t shaderType)
 {
     FILE* fp = fopen(path, "r");
-    if (fp == NULL) return NULL;
+    if (fp == NULL) 
+    {
+        printf("Failed to read shader from file... %s\n", path);
+        return 0;
+    }
 
-    char* output = (char*) malloc(128);
+    char* shaderSource = (char*) malloc(128);
     char c;
     int nChars = 0;
     int capacity = 128;
     do
     {
         c = fgetc(fp);
-        output[nChars] = c == EOF ? '\0' : c;
+        shaderSource[nChars] = c == EOF ? '\0' : c;
         if (++nChars == capacity)
         {
             capacity += 128;
-            output = (char*) realloc(output, sizeof(char) * capacity);
+            shaderSource = (char*) realloc(shaderSource, sizeof(char) * capacity);
         }
     } 
     while (c != EOF);
 
     fclose(fp);
-    return output;
-}
-
-bool initGLFW(GLFWwindow** window)
-{
-    if (glfwInit() == GLFW_FALSE) return false;
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Scanline", NULL, NULL);
-    if (*window == NULL) 
-    {
-        printf("Failed to initialise window...\n");
-        return false;
-    }
-
-    glfwMakeContextCurrent(*window);
-    glfwSetFramebufferSizeCallback(*window, fbSizeCallback);
-    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
-    {
-        printf("Failed to initialise GLAD...\n");
-        return false;
-    }
-
-    char* fragShader = readShaderFromFile(FRAG_PATH);
-    if (fragShader == NULL)
-    {
-        printf("Failed to read fragment shader...");
-        return false;
-    }
 
     int success;
     char infoLog[512];
-    uint64_t fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragShader, NULL);
-    free(fragShader);
+    uint32_t shader = glCreateShader(shaderType);
+    glShaderSource(shader, 1, &shaderSource, NULL);
+    free(shaderSource);
 
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        printf("Failed to compile fragment shader: %s\n", infoLog);
-        return false;
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        printf("Failed to compile shader %s: %s\n", path, infoLog);
+        glDeleteShader(shader);
+        return 0;
     }
 
-    char* vertShader = readShaderFromFile(VERT_PATH);
-    if (vertShader == NULL)
-    {
-        printf("Failed to read vertex shader...");
-        return false;
-    }
-
-    uint64_t vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertShader, NULL);
-    free(vertShader);
-
-    glCompileShader(vertexShader);
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        printf("Failed to compile vertex shader: %s\n", infoLog);
-        return false;
-    }
-
-    uint64_t shader = glCreateProgram();
-    glAttachShader(shader, vertexShader);
-    glAttachShader(shader, fragmentShader);
-    glLinkProgram(shader);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    glGetProgramiv(shader, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(shader, 512, NULL, infoLog);
-        printf("Failed link shader program: %s\n", infoLog);
-        glDeleteProgram(shader);
-        return false;
-    }
-
-    return true;
+    return shader;
 }
 
 #pragma endregion
@@ -134,17 +71,58 @@ int main()
     Vec3 heading = {1, 0, 0};
     int mxc = 0;
     int myc = 0;
+    uint32_t vertexShader, fragmentShader, shaderProgram;
 
     GLFWwindow* window;
-    if (!initGLFW(&window)) 
+    if (glfwInit() == GLFW_FALSE) return 0;
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Scanline", NULL, NULL);
+    if (window == NULL) 
     {
-        printf("Failed to initialise GLFW!\n");
+        printf("Failed to initialise window...\n");
+        return 0;
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, fbSizeCallback);
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
+    {
+        printf("Failed to initialise GLAD...\n");
         goto clean;
     }
 
+    vertexShader = createShader(VERT_PATH, GL_VERTEX_SHADER);
+    if (!vertexShader) goto clean;
+
+    fragmentShader = createShader(FRAG_PATH, GL_FRAGMENT_SHADER);
+    if (!fragmentShader) goto clean;
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    int success;
+    char infoLog[512];
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        printf("Failed link shader program: %s\n", infoLog);
+        goto clean;
+    }
+
+    glUseProgram(shaderProgram);
+
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        // processInput(window);
 
         // double mxa = PI * (mxc - mx) / (double) SCR_WIDTH;
         // double mya = -PI * (myc - my) / (double) SCR_WIDTH;
@@ -185,7 +163,10 @@ int main()
 clean:
     // glDeleteVertexArrays(1, &VAO);
     // glDeleteBuffers(1, &VBO);
-    // glDeleteProgram(shaderProgram);
+    glDeleteProgram(shaderProgram);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
