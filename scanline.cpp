@@ -1,5 +1,7 @@
 #include "scanline.hpp"
 
+ControlState controlState = {false, false, false, false};
+
 #pragma region Initialise
 
 void fbSizeCallback(GLFWwindow* window, int width, int height)
@@ -57,10 +59,29 @@ uint32_t createShader(const char* path, const uint32_t shaderType)
 
 #pragma region Inputs
 
-void processInput(GLFWwindow *window)
+void processKeyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    bool pressed = false;
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
+    {
+        pressed = true;
+    }
+    else if (action != GLFW_RELEASE) return;
+
+    if (key == GLFW_KEY_ESCAPE && pressed)
         glfwSetWindowShouldClose(window, true);
+
+    if (key == GLFW_KEY_W)
+        controlState.up = pressed;
+
+    if (key == GLFW_KEY_A)
+        controlState.left = pressed;
+
+    if (key == GLFW_KEY_S)
+        controlState.down = pressed;
+    
+    if (key == GLFW_KEY_D)
+        controlState.right = pressed;
 }
 
 #pragma endregion
@@ -119,11 +140,9 @@ int main()
     }
 
     glUseProgram(shaderProgram);
-
+    glfwSetKeyCallback(window, processKeyboard);
     while (!glfwWindowShouldClose(window))
     {
-        // processInput(window);
-
         // double mxa = PI * (mxc - mx) / (double) SCR_WIDTH;
         // double mya = -PI * (myc - my) / (double) SCR_WIDTH;
         // mxc = mx;

@@ -132,6 +132,14 @@ struct SLRenderer
     Ray** rays;
 };
 
+struct ControlState
+{
+    bool up;
+    bool down;
+    bool left;
+    bool right;
+};
+
 Tri triangles[] =
 {
     {
