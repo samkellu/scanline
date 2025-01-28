@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <unistd.h>
 
 #define PI          3.14159
 #define SCR_WIDTH   680

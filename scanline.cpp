@@ -82,6 +82,8 @@ void processKeyboard(GLFWwindow* window, int key, int scancode, int action, int 
     
     if (key == GLFW_KEY_D)
         controlState.right = pressed;
+
+    printf("up: %d, down: %d, left: %d, right: %d\r", controlState.up, controlState.down, controlState.left, controlState.right);
 }
 
 #pragma endregion
@@ -90,6 +92,7 @@ int main()
 {
     glm::vec3 position = {0, 0, 0};
     glm::vec3 heading = {1, 0, 0};
+    double time, frameTime, waitTime;
     int mxc = 0;
     int myc = 0;
     uint32_t vertexShader, fragmentShader, shaderProgram;
@@ -170,9 +173,17 @@ int main()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
 
+    time = glfwGetTime();
+    frameTime = 1 / 60.0f;
     while (!glfwWindowShouldClose(window))
     {
+        waitTime = glfwGetTime() - (time + frameTime);
+        if (waitTime > 0) 
+        {
+            usleep(waitTime);
+        }
 
+        time = glfwGetTime();
         glClearColor(0, 0, 0, 0);
         glClear(GL_CLEAR_BUFFER);
 
