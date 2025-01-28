@@ -88,8 +88,8 @@ void processKeyboard(GLFWwindow* window, int key, int scancode, int action, int 
 
 int main()
 {
-    Vec3 position = {0, 0, 0};
-    Vec3 heading = {1, 0, 0};
+    glm::vec3 position = {0, 0, 0};
+    glm::vec3 heading = {1, 0, 0};
     int mxc = 0;
     int myc = 0;
     uint32_t vertexShader, fragmentShader, shaderProgram;
