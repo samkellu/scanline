@@ -93,6 +93,19 @@ int main()
     int mxc = 0;
     int myc = 0;
     uint32_t vertexShader, fragmentShader, shaderProgram;
+    glm::vec3 triangle[3] = 
+    {
+        {1,0,0},
+        {0,0,0},
+        {0,1,0},
+    };
+
+    glm::vec3 color[3] = 
+    {
+        {255, 255, 0},
+        {255, 255, 0},
+        {255, 255, 0},
+    };
 
     GLFWwindow* window;
     if (glfwInit() == GLFW_FALSE) return 0;
@@ -141,8 +154,31 @@ int main()
 
     glUseProgram(shaderProgram);
     glfwSetKeyCallback(window, processKeyboard);
+
+    uint32_t vao;
+    uint32_t vbo[2];
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(2, &vbo[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 3, triangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 3, triangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+
     while (!glfwWindowShouldClose(window))
     {
+
+        glClearColor(0, 0, 0, 0);
+        glClear(GL_CLEAR_BUFFER);
+
+        glDrawArrays(GL_LINE_LOOP, 0, 3);
+        glfwSwapBuffers(window);
+
         // double mxa = PI * (mxc - mx) / (double) SCR_WIDTH;
         // double mya = -PI * (myc - my) / (double) SCR_WIDTH;
         // mxc = mx;
